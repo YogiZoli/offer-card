@@ -213,10 +213,12 @@ var WEBHOOK_URL = "";   // phase 4: the email gate. Empty = no POST.
       why:"Steps make the promise believable. People buy a clear path, not a pile of content.",
       fields:[ { key:"teaching", label:"List the main steps or modules, in order. One per line.", ph:"Find your one person\nWrite your offer\nGet your first calls", area:true, req:true, list:true } ],
       ghl:["Memberships categories and lessons","Each line becomes one category in your Course, with its lessons inside."] },
-    { id:"interaction", tag:"Interaction", title:"How will you work with them live?",
-      why:"Live contact is often what people value most. Be honest about what you will really do.",
-      fields:[ { key:"interaction", label:"Group calls, 1:1 sessions, Q&A, or none?", ph:"One live group Q&A call every week", area:true, req:true } ],
-      ghl:["Calendar","Set up a group event or 1:1 booking calendar so buyers can join or book their calls."] },
+    /* Interaction is group only: no booking calendar, no 1:1 calls. The default is no live sessions. */
+    { id:"interaction", tag:"Interaction", title:"Will you meet your group live?",
+      why:"Live time with the group is a strong extra, but it is optional. Only pick what you will really keep doing. There are no 1:1 calls to book.",
+      choice:{ key:"interaction", opts:[["No live sessions","No live sessions"],["Weekly live Q&A webinar","Weekly live Q&A webinar"],["Biweekly live Q&A webinar","Live Q&A webinar every two weeks"]] },
+      fields:[],
+      ghl:["Community live sessions","No booking calendar. If you run a live Q&A, post the webinar link as a recurring event inside your Community group."] },
     { id:"community", tag:"Community", title:"Will they have a place to meet each other?",
       why:"People stay longer when they are not alone.",
       fields:[ { key:"community", label:"Where, and what happens there? Write \"none\" if there is no community.", ph:"A private group to share wins and ask questions", area:true, req:true } ],
@@ -349,11 +351,12 @@ var WEBHOOK_URL = "";   // phase 4: the email gate. Empty = no POST.
 
   function question(q){
     var a = S.a, n = S.i - Q_FIRST + 1, body = "";
+    if(q.choice && !q.choice.other && !a[q.choice.key]) a[q.choice.key] = q.choice.opts[0][0];   /* default: the first option */
     if(q.choice){
       var cur = a[q.choice.key] || "", known = q.choice.opts.some(function(o){ return o[0] === cur; });
       body += "<div class='opts'>" + q.choice.opts.map(function(o){ return "<button type='button' class='opt' data-v='" + esc(o[0]) + "' aria-pressed='" + (cur === o[0]) + "'>" + esc(o[1]) + "</button>"; }).join("") +
-        "<button type='button' class='opt' data-v='' id='otherOpt' aria-pressed='" + (!!cur && !known) + "'>Something else</button></div>" +
-        "<div class='field' id='otherWrap'" + (cur && !known ? "" : " hidden") + "><label class='flabel' for='f_other'>Describe the format</label><input id='f_other' type='text' maxlength='120' value='" + esc(known ? "" : cur) + "' autocomplete='off'></div>";
+        (q.choice.other ? "<button type='button' class='opt' data-v='' id='otherOpt' aria-pressed='" + (!!cur && !known) + "'>Something else</button></div>" +
+        "<div class='field' id='otherWrap'" + (cur && !known ? "" : " hidden") + "><label class='flabel' for='f_other'>Describe the format</label><input id='f_other' type='text' maxlength='120' value='" + esc(known ? "" : cur) + "' autocomplete='off'></div>" : "</div>");
     }
     body += q.fields.map(function(f){
       var label = esc(f.label) + (f.req ? "" : " <small>(optional)</small>");
@@ -366,8 +369,7 @@ var WEBHOOK_URL = "";   // phase 4: the email gate. Empty = no POST.
 
     function collect(){
       q.fields.forEach(function(f){ var el = $("f_" + f.key); if(el) a[f.key] = el.value; });
-      var o = $("f_other"); if(o && !$("otherWrap").hidden) a[q.choice.key] = o.value;
-      saveSoon();
+      var o = $("f_other"); if(o && !$("otherWrap").hidden) a[q.choice.key] = o.value;      saveSoon();
     }
     function valid(){
       var err = missing(q);
@@ -382,10 +384,11 @@ var WEBHOOK_URL = "";   // phase 4: the email gate. Empty = no POST.
       b.addEventListener("click", function(){
         Array.prototype.forEach.call(stage.querySelectorAll(".opt"), function(x){ x.setAttribute("aria-pressed", String(x === b)); });
         var other = b.id === "otherOpt";
-        $("otherWrap").hidden = !other;
+        if($("otherWrap")) $("otherWrap").hidden = !other;
         a[q.choice.key] = other ? $("f_other").value : b.dataset.v;
         save();
-        (other ? $("f_other") : $("f_" + q.fields[0].key)).focus();
+        var f = other ? $("f_other") : (q.fields[0] && $("f_" + q.fields[0].key));
+        if(f) f.focus();
       });
     });
     bindNav(function(){ collect(); return valid(); });
