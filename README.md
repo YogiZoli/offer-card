@@ -26,12 +26,20 @@ The Launch Engine export (phase 3) maps them to `offer_name`, `offer_promise` an
 
 ## Settings
 
-At the top of the script: `WEBHOOK_URL` (email gate, phase 4). Empty means no POST.
+At the top of the script: `WEBHOOK_URL`, a GHL Inbound Webhook. Empty means no POST, the card is still shown.
+
+## Email gate
+
+After question 12 the visitor gives first name and email. The page posts `name, email, source ("offer-card"), offer_name` to the webhook. The GHL workflow "Lead magnet Offer Card" (sub-account YTC2C) creates or updates the contact and adds the tag `lead-magnet-offer-card`. The delivery email is NOT sent from here: the Lead Magnet Machine picks up the tag.
+
+Inbound Webhook is a premium GHL trigger (a small charge per run).
+
+For affiliates: the same file, with their own webhook URL pasted into `WEBHOOK_URL`.
 
 ## Status
 
 - Phase 1: question list and schema. Done.
 - Phase 2: questionnaire and result page. Done.
 - Phase 3: PDF and Launch Engine export block. Done. The PDF is real text built with jsPDF from the answers, no AI. "Copy for Launch Engine" gives Markdown plus the JSON below, also as a .md download.
-- Phase 4: email gate.
+- Phase 4: email gate. Done, tested end to end (contact plus tag created in GHL).
 - Phase 5: first real Offer Card (Biz In A Box).

@@ -171,12 +171,12 @@
 <script src="vendor/html2canvas.min.js"></script>
 <script>
 /* ===== SETTINGS ===== */
-var WEBHOOK_URL = "";   // phase 4: the email gate. Empty = no POST.
+var WEBHOOK_URL = "https://services.leadconnectorhq.com/hooks/em19nP6nAqQD6gDdDDJ9/webhook-trigger/84b83900-3923-4c28-8c0f-650180f96bb9";   // GHL Inbound Webhook: creates the contact and adds the tag lead-magnet-offer-card. Affiliates paste their own. Empty = no POST, the card is still shown.
 /* ==================== */
 
 (function(){
   var $ = function(id){ return document.getElementById(id); };
-  var VERSION = "0.3.0";
+  var VERSION = "0.4.0";
   var STORE_KEY = "offer_card_state";
 
   /* The 12 components. Keys match the JSON schema v1 (offer.*). Each screen says why it asks. */
@@ -249,10 +249,11 @@ var WEBHOOK_URL = "";   // phase 4: the email gate. Empty = no POST.
       ghl:["Order form and refunds","Show the guarantee next to the order form. Refunds are handled in Payments."] }
   ];
   var KEYS = ["name","subtitle","who_for","problem","not_for","promise_result","promise_timeframe","even_if","format","duration","teaching","interaction","community","support","bonuses","price","payment_plan","act_now_reason","risk_reversal"];
-  var SCREENS = ["intro"].concat(QUESTIONS.map(function(q){ return q.id; }), ["card"]);
-  var Q_FIRST = 1, CARD_I = SCREENS.length - 1;
+  var SCREENS = ["intro"].concat(QUESTIONS.map(function(q){ return q.id; }), ["email", "card"]);
+  var Q_FIRST = 1, EMAIL_I = SCREENS.length - 2, CARD_I = SCREENS.length - 1;
+  var SOURCE = "offer-card";
 
-  var S = { i:0, a:{} };
+  var S = { i:0, a:{}, lead:null, leadState:null };
   var storageOK = true;
 
   /* ---------- helpers ---------- */
@@ -266,7 +267,7 @@ var WEBHOOK_URL = "";   // phase 4: the email gate. Empty = no POST.
     try{
       var raw = localStorage.getItem(STORE_KEY); if(!raw) return;
       var d = JSON.parse(raw);
-      if(d && typeof d === "object"){ S.i = +d.i || 0; S.a = d.a && typeof d.a === "object" ? d.a : {}; }
+      if(d && typeof d === "object"){ S.i = +d.i || 0; S.a = d.a && typeof d.a === "object" ? d.a : {}; S.lead = d.lead || null; S.leadState = d.leadState || null; }
     }catch(e){ storageOK = false; }
   }
   function firstMissing(){
@@ -392,6 +393,30 @@ var WEBHOOK_URL = "";   // phase 4: the email gate. Empty = no POST.
     return doc.output("blob");
   }
 
+  /* ---------- email gate: one POST to the GHL Inbound Webhook. The delivery email comes from the Lead Magnet Machine, not from here. ---------- */
+  function leadPayload(){ return { name:S.lead.name, email:S.lead.email, source:SOURCE, offer_name:clean(S.a.name) }; }
+  function sendLead(){
+    if(!WEBHOOK_URL || !S.lead) return;
+    var p = leadPayload();
+    S.leadState = { status:"pending", tries:(S.leadState ? S.leadState.tries : 0) + 1 }; save();
+    function mark(status){ if(S.leadState){ S.leadState.status = status; save(); } }
+    try{
+      fetch(WEBHOOK_URL, { method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(p), keepalive:true })
+        .then(function(r){ if(!r.ok) throw new Error("status " + r.status); mark("sent"); })
+        .catch(function(){
+          /* If the browser blocks the JSON request (CORS), resend as a plain form post. */
+          var flat = new URLSearchParams();
+          Object.keys(p).forEach(function(k){ flat.append(k, p[k]); });
+          return fetch(WEBHOOK_URL, { method:"POST", mode:"no-cors", body:flat, keepalive:true }).then(function(){ mark("sent-unconfirmed"); });
+        })
+        .catch(function(){ mark("failed"); });
+    }catch(e){ mark("failed"); }
+  }
+  /* a lead that did not go out last time gets another try on the next visit */
+  function retryLead(){
+    if(WEBHOOK_URL && S.lead && S.leadState && (S.leadState.status === "pending" || S.leadState.status === "failed") && S.leadState.tries < 5) sendLead();
+  }
+
   /* ---------- screens ---------- */
   var stage = $("stage");
   function go(i, fromHistory){
@@ -423,6 +448,7 @@ var WEBHOOK_URL = "";   // phase 4: the email gate. Empty = no POST.
   function progress(){
     var L, R, pct;
     if(S.i === 0){ L = "Offer Card"; R = "12 questions"; pct = 0; }
+    else if(S.i === EMAIL_I){ L = "Almost there"; R = ""; pct = 100; }
     else if(S.i < CARD_I){ L = QUESTIONS[S.i - Q_FIRST].tag; R = "Question " + S.i + " of " + QUESTIONS.length; pct = (S.i - 1) / QUESTIONS.length * 100; }
     else { L = "Your Offer Card"; R = "Done"; pct = 100; }
     $("progL").textContent = L; $("progR").textContent = R; $("progBar").style.width = Math.max(3, pct) + "%";
@@ -438,10 +464,12 @@ var WEBHOOK_URL = "";   // phase 4: the email gate. Empty = no POST.
   }
   function draw(){
     /* the card needs every required answer: if one is missing, go to it instead of showing a broken card */
-    if(S.i === CARD_I){ var miss = firstMissing(); if(miss >= 0) S.i = Q_FIRST + miss; }
+    if(S.i >= EMAIL_I){ var miss = firstMissing(); if(miss >= 0) S.i = Q_FIRST + miss; }
+    if(S.i === CARD_I && !S.lead) S.i = EMAIL_I;
     progress();
     var id = SCREENS[S.i];
     if(id === "intro") return intro();
+    if(id === "email") return emailGate();
     if(id === "card") return card();
     return question(QUESTIONS[S.i - Q_FIRST]);
   }
@@ -473,7 +501,7 @@ var WEBHOOK_URL = "";   // phase 4: the email gate. Empty = no POST.
         : "<input id='f_" + f.key + "' type='text' maxlength='200' placeholder='" + esc(f.ph) + "' value='" + esc(a[f.key] || "") + "' autocomplete='off'>";
       return "<div class='field'><label class='flabel' for='f_" + f.key + "'>" + label + "</label>" + ctl + (f.hint ? "<p class='hint'>" + esc(f.hint) + "</p>" : "") + "</div>";
     }).join("");
-    var last = S.i === CARD_I - 1;
+    var last = S.i === EMAIL_I - 1;
     stage.innerHTML = band(q.tag, n, q.title, q.why) + "<div class='card'>" + body + "<p class='formerr' id='err' role='alert' hidden></p>" + navHtml(last ? "Show my Offer Card" : "Next") + "</div>";
 
     function collect(){
@@ -503,6 +531,29 @@ var WEBHOOK_URL = "";   // phase 4: the email gate. Empty = no POST.
     bindNav(function(){ collect(); return valid(); });
     var first = stage.querySelector("input[type=text],textarea");
     if(first && !q.choice && window.matchMedia && window.matchMedia("(min-width:700px)").matches) first.focus();
+  }
+
+  function emailGate(){
+    var l = S.lead || { name:"", email:"" };
+    stage.innerHTML = band("Last step", "12", "Your Offer Card is ready", "Tell me where to send it. You also see it on the next screen right away, and you can download it as a PDF.") +
+      "<form class='card' id='leadForm' novalidate><div class='two'>" +
+      "<div class='field'><label class='flabel' for='leadName'>First name</label><input id='leadName' type='text' autocomplete='given-name' maxlength='60' value='" + esc(l.name) + "'></div>" +
+      "<div class='field'><label class='flabel' for='leadEmail'>Email</label><input id='leadEmail' type='email' autocomplete='email' inputmode='email' maxlength='120' value='" + esc(l.email) + "'></div></div>" +
+      "<p class='formerr' id='formErr' role='alert' hidden></p>" +
+      "<p class='hint'>No spam. You can leave the list with one click at any time.</p>" +
+      "<div class='nav'><button type='button' class='btn ghost' id='back'>Back</button><button class='btn' type='submit' id='next'>Show my Offer Card</button></div></form>";
+    $("back").addEventListener("click", function(){ go(S.i - 1); });
+    $("leadForm").addEventListener("submit", function(ev){
+      ev.preventDefault();
+      var name = clean($("leadName").value), email = clean($("leadEmail").value), err = $("formErr"), problem = "";
+      if(!name) problem = "Enter your first name.";
+      else if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) problem = "Enter a valid email address, like name@example.com.";
+      if(problem){ err.textContent = problem; err.hidden = false; (name ? $("leadEmail") : $("leadName")).focus(); return; }
+      var fresh = !S.lead || S.lead.email !== email;
+      S.lead = { name:name, email:email };
+      if(fresh){ S.leadState = null; sendLead(); }
+      go(CARD_I);
+    });
   }
 
   /* ---------- result ---------- */
@@ -549,13 +600,14 @@ var WEBHOOK_URL = "";   // phase 4: the email gate. Empty = no POST.
     $("back").addEventListener("click", function(){ go(S.i - 1); });
     $("restart").addEventListener("click", function(){
       if(!confirm("Start a new Offer Card? Your current answers in this browser will be replaced.")) return;
-      S.a = {}; go(0);
+      S.a = {}; go(0);   /* the lead stays: a returning visitor does not fill the gate twice */
     });
   }
 
   /* ---------- start ---------- */
   $("ver").textContent = "v" + VERSION;
   load();
+  retryLead();
   window.addEventListener("popstate", function(e){ if(e.state && typeof e.state.i === "number") go(e.state.i, true); });
   try{ history.replaceState({ i:S.i }, ""); }catch(e){}
   render();
