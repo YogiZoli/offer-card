@@ -32,6 +32,6 @@ At the top of the script: `WEBHOOK_URL` (email gate, phase 4). Empty means no PO
 
 - Phase 1: question list and schema. Done.
 - Phase 2: questionnaire and result page. Done.
-- Phase 3: PDF and Launch Engine export block.
+- Phase 3: PDF and Launch Engine export block. Done. The PDF is real text built with jsPDF from the answers, no AI. "Copy for Launch Engine" gives Markdown plus the JSON below, also as a .md download.
 - Phase 4: email gate.
 - Phase 5: first real Offer Card (Biz In A Box).

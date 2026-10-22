@@ -139,6 +139,10 @@
   .ghl{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;font-size:var(--text-sm);line-height:1.5;padding:10px 12px;border-radius:var(--radius-md);background:var(--surface);border:1px dashed var(--tone)}
   .ghl .tag{font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:var(--tone);color:var(--surface);border-radius:var(--radius-full);padding:2px 9px;white-space:nowrap}
   .ghl b{display:block}
+  .out{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 14px;font-family:var(--font-mono);font-size:12.5px;line-height:1.55;max-height:340px;overflow:auto;color:var(--text)}
+  #pdfBtn{animation:cta-halo-light 2.4s var(--ease-out) infinite}
+  @keyframes cta-halo-light{0%{box-shadow:0 0 0 0 var(--surface)}70%{box-shadow:0 0 0 14px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  .hl .formerr{margin-top:4px}
 
   footer{color:var(--muted);font-size:var(--text-xs);line-height:1.55;text-align:center}
 
@@ -172,7 +176,7 @@ var WEBHOOK_URL = "";   // phase 4: the email gate. Empty = no POST.
 
 (function(){
   var $ = function(id){ return document.getElementById(id); };
-  var VERSION = "0.2.0";
+  var VERSION = "0.3.0";
   var STORE_KEY = "offer_card_state";
 
   /* The 12 components. Keys match the JSON schema v1 (offer.*). Each screen says why it asks. */
@@ -281,6 +285,111 @@ var WEBHOOK_URL = "";   // phase 4: the email gate. Empty = no POST.
     var a = S.a, o = {};
     KEYS.forEach(function(k){ o[k] = k === "teaching" || k === "bonuses" ? lines(a[k]) : clean(a[k]); });
     return o;
+  }
+  function promiseText(o){
+    var t = o.promise_result.replace(/[.\s]+$/, "");
+    if(o.promise_timeframe) t += ", " + o.promise_timeframe.replace(/^./, function(c){ return c.toLowerCase(); }).replace(/[.\s]+$/, "");
+    return t + ", even if " + o.even_if.replace(/^even if\s*/i, "").replace(/[.\s]+$/, "") + ".";
+  }
+  function priceText(o){ return o.price + (o.payment_plan ? " or " + o.payment_plan : ""); }
+
+  /* ---------- Launch Engine export: stable JSON (schema v1) plus clean Markdown ---------- */
+  var MD_LABELS = { who_for:"Who it is for", problem:"The problem", not_for:"Who it is not for", promise_result:"Result", promise_timeframe:"Timeframe", even_if:"Even if",
+    name:"Name", subtitle:"Subtitle", format:"Format", duration:"Duration", teaching:"Steps or modules", interaction:"Live interaction", community:"Community", support:"Support",
+    bonuses:"Bonuses", price:"Price", payment_plan:"Payment plan", act_now_reason:"Reason to act now", risk_reversal:"Guarantee" };
+  function exportJson(){
+    var o = offerData();
+    return { schema:"offer-card", version:1, created_at:new Date().toISOString(), offer:o,
+      launch_engine:{ offer_name:o.name, offer_promise:promiseText(o), offer_price_display:priceText(o) } };
+  }
+  function markdown(){
+    var o = offerData(), md = ["# Offer Card: " + o.name, ""];
+    if(o.subtitle) md.push(o.subtitle, "");
+    md.push("**Promise:** " + promiseText(o), "", "**Price:** " + priceText(o), "");
+    QUESTIONS.forEach(function(q, i){
+      md.push("## " + (i + 1) + ". " + q.tag.replace(/"/g, ""));
+      var keys = (q.choice ? [q.choice.key] : []).concat(q.fields.map(function(f){ return f.key; }));
+      keys.forEach(function(k){
+        var v = o[k];
+        if(Array.isArray(v)){ if(v.length){ md.push("- **" + MD_LABELS[k] + ":**"); v.forEach(function(x, j){ md.push("    " + (k === "teaching" ? (j + 1) + ". " : "- ") + x); }); } }
+        else if(v) md.push("- **" + MD_LABELS[k] + ":** " + v);
+      });
+      md.push("- **In GHL:** " + q.ghl[0] + ". " + q.ghl[1], "");
+    });
+    return md.join("\n").trim() + "\n";
+  }
+  function launchEngineText(){ return markdown() + "\n```json\n" + JSON.stringify(exportJson(), null, 2) + "\n```\n"; }
+
+  function copyText(text, btn){
+    var label = btn.textContent;
+    function flash(t){ btn.textContent = t; setTimeout(function(){ btn.textContent = label; }, 1600); }
+    function fallback(){
+      var t = document.createElement("textarea"); t.value = text; t.setAttribute("readonly", ""); t.style.position = "fixed"; t.style.opacity = "0";
+      document.body.appendChild(t); t.select();
+      var ok = false; try{ ok = document.execCommand("copy"); }catch(e){}
+      document.body.removeChild(t); flash(ok ? "Copied" : "Select and copy by hand");
+    }
+    try{ if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function(){ flash("Copied"); }, fallback); else fallback(); }catch(e){ fallback(); }
+  }
+  function download(name, blob){
+    var u = URL.createObjectURL(blob), l = document.createElement("a");
+    l.href = u; l.download = name; document.body.appendChild(l); l.click(); document.body.removeChild(l);
+    setTimeout(function(){ URL.revokeObjectURL(u); }, 4000);
+  }
+  function fileBase(){ return "offer-card-" + (clean(S.a.name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "my-offer"); }
+
+  /* ---------- PDF: real text, no AI, built from the answers. Shine palette, three tones. ---------- */
+  function latin(s){ return String(s || "").replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, "-").replace(/…/g, "...").replace(/[^\x20-\x7E\xA0-\xFF\n]/g, ""); }
+  function makePdf(){
+    var J = window.jspdf && window.jspdf.jsPDF;
+    if(!J) throw new Error("PDF library missing");
+    var o = offerData(), doc = new J({ unit:"pt", format:"a4" });
+    var W = 595, H = 842, M = 48, CW = W - M * 2, y;
+    var C = { text:[15,23,42], muted:[71,85,105], border:[226,232,240], white:[255,255,255], teal:[14,116,144], tones:[[[14,116,144],[230,244,247]],[[30,58,138],[232,237,251]],[[4,120,87],[231,246,240]]] };
+    function col(c, kind){ if(kind === "fill") doc.setFillColor(c[0], c[1], c[2]); else if(kind === "draw") doc.setDrawColor(c[0], c[1], c[2]); else doc.setTextColor(c[0], c[1], c[2]); }
+    function wrap(t, size, w){ doc.setFontSize(size); return doc.splitTextToSize(latin(t), w); }
+    function footer(){ doc.setFont("helvetica", "normal"); doc.setFontSize(8); col(C.muted); doc.text("Offer Card  |  " + latin(o.name) + "  |  page " + doc.internal.getNumberOfPages(), M, H - 24); }
+    function newPage(){ footer(); doc.addPage(); y = M; }
+
+    /* hero */
+    col(C.teal, "fill"); doc.rect(0, 0, W, 210, "F");
+    col(C.white); doc.setFont("courier", "bold"); doc.setFontSize(10); doc.text("YOUR OFFER CARD", M, 56);
+    doc.setFont("helvetica", "bold"); var tl = wrap(o.name, 30, CW); doc.text(tl, M, 92); y = 92 + tl.length * 32;
+    doc.setFont("helvetica", "normal");
+    if(o.subtitle){ var sl = wrap(o.subtitle, 12, CW); doc.text(sl, M, y - 8); y += sl.length * 15; }
+    doc.setFont("helvetica", "bold"); var pl = wrap(promiseText(o), 14, CW); doc.text(pl, M, y); y += pl.length * 18;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(11); doc.text(latin(o.format + ", " + o.duration + ".  " + priceText(o)), M, Math.min(y + 4, 200));
+    y = 240;
+    col(C.muted); doc.setFontSize(10);
+    var il = wrap("Each part of your offer below, with what to build for it in GHL. This card is also your build spec.", 10, CW); doc.text(il, M, y); y += il.length * 13 + 14;
+
+    /* one block per component */
+    QUESTIONS.forEach(function(q, i){
+      var tone = C.tones[i % 3], rows = [];
+      var keys = (q.choice ? [q.choice.key] : []).concat(q.fields.map(function(f){ return f.key; }));
+      keys.forEach(function(k){
+        var v = o[k];
+        if(Array.isArray(v)){ if(v.length) rows.push([MD_LABELS[k], v.map(function(x, j){ return (k === "teaching" ? (j + 1) + ". " : "- ") + x; }).join("\n")]); }
+        else if(v) rows.push([MD_LABELS[k], v]);
+      });
+      var IW = CW - 28, h = 34, laid = rows.map(function(r){ var l = wrap(r[1], 10.5, IW); h += 14 + l.length * 13.5 + 6; return l; });
+      var gl = wrap(q.ghl[0] + ": " + q.ghl[1], 9.5, IW - 60); h += gl.length * 12.5 + 18;
+      if(y + h > H - 50) newPage();
+      col(tone[1], "fill"); doc.roundedRect(M, y, CW, h, 6, 6, "F");
+      col(tone[0], "fill"); doc.rect(M, y, 4, h, "F");
+      var yy = y + 22;
+      col(tone[0]); doc.setFont("courier", "bold"); doc.setFontSize(10); doc.text((i + 1) + "  " + latin(q.tag).toUpperCase(), M + 16, yy); yy += 12;
+      rows.forEach(function(r, j){
+        yy += 10; col(C.muted); doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.text(latin(r[0]).toUpperCase(), M + 16, yy);
+        yy += 13; col(C.text); doc.setFont("helvetica", "normal"); doc.setFontSize(10.5); doc.text(laid[j], M + 16, yy); yy += (laid[j].length - 1) * 13.5 + 6;
+      });
+      yy += 8; col(C.white, "fill"); col(tone[0], "draw"); doc.setLineDashPattern([3, 2], 0); doc.roundedRect(M + 12, yy, CW - 24, gl.length * 12.5 + 10, 4, 4, "FD"); doc.setLineDashPattern([], 0);
+      col(tone[0]); doc.setFont("courier", "bold"); doc.setFontSize(8.5); doc.text("IN GHL", M + 20, yy + 14);
+      col(C.text); doc.setFont("helvetica", "normal"); doc.setFontSize(9.5); doc.text(gl, M + 76, yy + 14);
+      y += h + 12;
+    });
+    footer();
+    return doc.output("blob");
   }
 
   /* ---------- screens ---------- */
@@ -407,12 +516,12 @@ var WEBHOOK_URL = "";   // phase 4: the email gate. Empty = no POST.
   }
   function card(){
     var o = offerData();
-    var promise = o.promise_result + (o.promise_timeframe ? ", " + o.promise_timeframe.replace(/^./, function(c){ return c.toLowerCase(); }) : "") + ", even if " + o.even_if.replace(/^even if\s*/i, "");
     var html = "<div class='card hl'><span class='kick'>Your Offer Card</span><h3 id='qh' tabindex='-1'>" + esc(o.name) + "</h3>" +
       (o.subtitle ? "<p>" + esc(o.subtitle) + "</p>" : "") +
-      "<p class='promise'>" + esc(promise.replace(/[.\s]+$/, "")) + ".</p>" +
-      "<p>" + esc(o.format) + ", " + esc(o.duration) + ". " + esc(o.price) + (o.payment_plan ? " or " + esc(o.payment_plan) : "") + ".</p>" +
-      "<div class='nav'><button type='button' class='btn ghost small' id='editAll'>Change an answer</button></div></div>";
+      "<p class='promise'>" + esc(promiseText(o)) + "</p>" +
+      "<p>" + esc(o.format) + ", " + esc(o.duration) + ". " + esc(priceText(o)) + ".</p>" +
+      "<div class='nav'><button type='button' class='btn' id='pdfBtn'>Download my Offer Card (PDF)</button><button type='button' class='btn ghost small' id='editAll'>Change an answer</button></div>" +
+      "<p class='formerr' id='pdfErr' role='alert' hidden></p></div>";
     QUESTIONS.forEach(function(q, i){
       var parts = q.fields.map(function(f){ return ansHtml(f.label.replace(/[?.].*$/, function(m){ return m.charAt(0) === "?" ? "?" : ""; }), o[f.key], f.list); });
       if(q.choice) parts.unshift(ansHtml("Format", o.format));
@@ -420,9 +529,21 @@ var WEBHOOK_URL = "";   // phase 4: the email gate. Empty = no POST.
         "<button type='button' class='linkbtn' data-edit='" + (Q_FIRST + i) + "'>Edit</button></div>" + parts.join("") +
         "<div class='ghl'><span class='tag'>In GHL</span><span><b>" + esc(q.ghl[0]) + "</b>" + esc(q.ghl[1]) + "</span></div></section>";
     });
-    html += "<div class='card'><h3>What comes next</h3><p class='hint'>Phase 3 adds the PDF download and the copy block for the Launch Engine here.</p>" +
-      "<div class='nav'><button type='button' class='btn ghost' id='back'>Back</button><button type='button' class='btn ghost small' id='restart'>Start a new Offer Card</button></div></div>";
+    var le = launchEngineText();
+    html += "<div class='card'><h3>Copy for Launch Engine</h3><p class='hint'>Your answers as clean Markdown plus JSON with stable keys. Paste it where the Launch Brief asks for your Offer Card, and the Sales Page Generator writes your sales page from it.</p>" +
+      "<div class='nav'><button type='button' class='btn' id='cpLE'>Copy for Launch Engine</button><button type='button' class='btn ghost small' id='cpMD'>Copy Markdown only</button><button type='button' class='btn ghost small' id='cpJSON'>Copy JSON only</button><button type='button' class='btn ghost small' id='dlMD'>Download .md</button></div>" +
+      "<pre class='out' id='leOut'>" + esc(le) + "</pre></div>";
+    html += "<div class='card'><div class='nav'><button type='button' class='btn ghost' id='back'>Back</button><button type='button' class='btn ghost small' id='restart'>Start a new Offer Card</button></div></div>";
     stage.innerHTML = html;
+    $("cpLE").addEventListener("click", function(){ copyText(launchEngineText(), this); });
+    $("cpMD").addEventListener("click", function(){ copyText(markdown(), this); });
+    $("cpJSON").addEventListener("click", function(){ copyText(JSON.stringify(exportJson(), null, 2), this); });
+    $("dlMD").addEventListener("click", function(){ download(fileBase() + ".md", new Blob([launchEngineText()], { type:"text/markdown" })); });
+    $("pdfBtn").addEventListener("click", function(){
+      var err = $("pdfErr");
+      try{ download(fileBase() + ".pdf", makePdf()); err.hidden = true; }
+      catch(e){ err.textContent = "The PDF did not build. Reload the page and try again. Your answers are safe."; err.hidden = false; }
+    });
     Array.prototype.forEach.call(stage.querySelectorAll("[data-edit]"), function(b){ b.addEventListener("click", function(){ go(+b.dataset.edit); }); });
     $("editAll").addEventListener("click", function(){ go(Q_FIRST); });
     $("back").addEventListener("click", function(){ go(S.i - 1); });
@@ -438,7 +559,7 @@ var WEBHOOK_URL = "";   // phase 4: the email gate. Empty = no POST.
   window.addEventListener("popstate", function(e){ if(e.state && typeof e.state.i === "number") go(e.state.i, true); });
   try{ history.replaceState({ i:S.i }, ""); }catch(e){}
   render();
-  window.OfferCard = { data:offerData };
+  window.OfferCard = { data:offerData, json:exportJson, markdown:markdown, pdf:makePdf };
 })();
 </script>
 </body>
