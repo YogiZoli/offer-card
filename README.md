@@ -42,4 +42,10 @@ For affiliates: the same file, with their own webhook URL pasted into `WEBHOOK_U
 - Phase 2: questionnaire and result page. Done.
 - Phase 3: PDF and Launch Engine export block. Done. The PDF is real text built with jsPDF from the answers, no AI. "Copy for Launch Engine" gives Markdown plus the JSON below, also as a .md download.
 - Phase 4: email gate. Done, tested end to end (contact plus tag created in GHL).
-- Phase 5: first real Offer Card (Biz In A Box).
+- Phase 5: first real Offer Card (Biz In A Box). Done: `offers/biz-in-a-box/` holds the PDF, the Launch Engine Markdown and the JSON. Source: Drive docs "33_Offer_v4_Biz_In_A_Box" and Offer v3.
+
+## Real Offer Cards
+
+| Offer | Files |
+|---|---|
+| Biz In A Box | `offers/biz-in-a-box/offer-card-biz-in-a-box.pdf`, `.md`, `.json` |

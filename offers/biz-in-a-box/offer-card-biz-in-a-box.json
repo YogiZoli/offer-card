@@ -1,0 +1,45 @@
+{
+  "schema": "offer-card",
+  "version": 1,
+  "created_at": "2026-10-22T13:55:48.934Z",
+  "offer": {
+    "name": "Biz In A Box",
+    "subtitle": "The Ownership Method",
+    "who_for": "Experienced freelancers, consultants, coaches and professionals starting over, with real expertise but no audience and no course yet.",
+    "problem": "They sell their time for money, and they have no steady way to get new leads without ads, cold outreach or tech hassle.",
+    "not_for": "People who want overnight money, want to go viral, have nothing to teach yet, or would rather buy ads.",
+    "promise_result": "Turn your knowledge into a peaceful business you own, with a steady flow of new leads coming to you from YouTube",
+    "promise_timeframe": "in 90 days",
+    "even_if": "you have no audience yet and you never want to be on camera",
+    "format": "Online course",
+    "duration": "4 phases, one path, 12 weeks at 2 to 6 hours a week",
+    "teaching": [
+      "Foundations: who you serve and what you sell",
+      "Build Your Audience: free traffic from YouTube",
+      "Turn Viewers Into Subscribers: your own email list",
+      "Sell and Automate: your system runs on its own"
+    ],
+    "interaction": "No live sessions",
+    "community": "A small private member community, coming later. Small on purpose.",
+    "support": "Send me a short email after you join, and I reply to every member by email.",
+    "bonuses": [
+      "Offer Card",
+      "Freedom Calculator and GHL Income Calculator",
+      "Brand Channel Wizard",
+      "YT Flywheel Planner",
+      "AI Avatar Setup Guide",
+      "Minicourse As A Lead Magnet",
+      "The Ownership Snapshot",
+      "vidrev comment automation, free while your GoHighLevel runs through my link"
+    ],
+    "price": "Free course when you start GoHighLevel through my link (GoHighLevel itself is 97 USD per month, paid directly to GoHighLevel)",
+    "payment_plan": "Done For You: 1,800 USD upfront, max 4 seats",
+    "act_now_reason": "Only 4 Done For You seats. I build every channel myself, so the cap is real.",
+    "risk_reversal": "No refunds, full accountability: if you do the work and you are stuck, I work with you until your system is live. Condition: complete each phase questionnaire."
+  },
+  "launch_engine": {
+    "offer_name": "Biz In A Box",
+    "offer_promise": "Turn your knowledge into a peaceful business you own, with a steady flow of new leads coming to you from YouTube, in 90 days, even if you have no audience yet and you never want to be on camera.",
+    "offer_price_display": "Free course when you start GoHighLevel through my link (GoHighLevel itself is 97 USD per month, paid directly to GoHighLevel) or Done For You: 1,800 USD upfront, max 4 seats"
+  }
+}

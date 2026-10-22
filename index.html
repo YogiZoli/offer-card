@@ -176,7 +176,7 @@ var WEBHOOK_URL = "https://services.leadconnectorhq.com/hooks/em19nP6nAqQD6gDdDD
 
 (function(){
   var $ = function(id){ return document.getElementById(id); };
-  var VERSION = "0.4.0";
+  var VERSION = "0.4.1";
   var STORE_KEY = "offer_card_state";
 
   /* The 12 components. Keys match the JSON schema v1 (offer.*). Each screen says why it asks. */
@@ -352,15 +352,18 @@ var WEBHOOK_URL = "https://services.leadconnectorhq.com/hooks/em19nP6nAqQD6gDdDD
     function footer(){ doc.setFont("helvetica", "normal"); doc.setFontSize(8); col(C.muted); doc.text("Offer Card  |  " + latin(o.name) + "  |  page " + doc.internal.getNumberOfPages(), M, H - 24); }
     function newPage(){ footer(); doc.addPage(); y = M; }
 
-    /* hero */
-    col(C.teal, "fill"); doc.rect(0, 0, W, 210, "F");
+    /* hero: measure first, so long answers grow the teal block instead of running off the page */
+    doc.setFont("helvetica", "bold"); var tl = wrap(o.name, 30, CW), pl = wrap(promiseText(o), 14, CW);
+    doc.setFont("helvetica", "normal"); var sl = o.subtitle ? wrap(o.subtitle, 12, CW) : [], ml = wrap(o.format + ", " + o.duration + ". " + priceText(o) + ".", 11, CW);
+    var heroH = 92 + tl.length * 32 + sl.length * 15 + pl.length * 18 + ml.length * 14 + 24;
+    col(C.teal, "fill"); doc.rect(0, 0, W, heroH, "F");
     col(C.white); doc.setFont("courier", "bold"); doc.setFontSize(10); doc.text("YOUR OFFER CARD", M, 56);
-    doc.setFont("helvetica", "bold"); var tl = wrap(o.name, 30, CW); doc.text(tl, M, 92); y = 92 + tl.length * 32;
-    doc.setFont("helvetica", "normal");
-    if(o.subtitle){ var sl = wrap(o.subtitle, 12, CW); doc.text(sl, M, y - 8); y += sl.length * 15; }
-    doc.setFont("helvetica", "bold"); var pl = wrap(promiseText(o), 14, CW); doc.text(pl, M, y); y += pl.length * 18;
-    doc.setFont("helvetica", "normal"); doc.setFontSize(11); doc.text(latin(o.format + ", " + o.duration + ".  " + priceText(o)), M, Math.min(y + 4, 200));
-    y = 240;
+    doc.setFont("helvetica", "bold"); doc.setFontSize(30); doc.text(tl, M, 92); y = 92 + tl.length * 32;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(12);
+    if(sl.length){ doc.text(sl, M, y - 8); y += sl.length * 15; }
+    doc.setFont("helvetica", "bold"); doc.setFontSize(14); doc.text(pl, M, y); y += pl.length * 18;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(11); doc.text(ml, M, y + 4);
+    y = heroH + 30;
     col(C.muted); doc.setFontSize(10);
     var il = wrap("Each part of your offer below, with what to build for it in GHL. This card is also your build spec.", 10, CW); doc.text(il, M, y); y += il.length * 13 + 14;
 
@@ -433,8 +436,8 @@ var WEBHOOK_URL = "https://services.leadconnectorhq.com/hooks/em19nP6nAqQD6gDdDD
       if(el.classList && (el.classList.contains("card") || el.classList.contains("band")) && !el.classList.contains("hl")) el.setAttribute("data-tone", String(n++ % 3 + 1));
     });
   }
-  function band(tag, n, h, why){
-    return "<section class='band'><span class='steptag'><span class='n'>" + n + "</span> " + esc(tag) + "</span><h2 id='qh' tabindex='-1'>" + esc(h) + "</h2>" + (why ? "<p class='why'><b>Why I ask:</b> " + esc(why) + "</p>" : "") + "</section>";
+  function band(tag, n, h, why, plain){
+    return "<section class='band'><span class='steptag'><span class='n'>" + n + "</span> " + esc(tag) + "</span><h2 id='qh' tabindex='-1'>" + esc(h) + "</h2>" + (why ? "<p class='why'>" + (plain ? "" : "<b>Why I ask:</b> ") + esc(why) + "</p>" : "") + "</section>";
   }
   function navHtml(nextLabel){
     return "<div class='nav'>" + (S.i > 0 ? "<button type='button' class='btn ghost' id='back'>Back</button>" : "<span></span>") +
@@ -535,7 +538,7 @@ var WEBHOOK_URL = "https://services.leadconnectorhq.com/hooks/em19nP6nAqQD6gDdDD
 
   function emailGate(){
     var l = S.lead || { name:"", email:"" };
-    stage.innerHTML = band("Last step", "12", "Your Offer Card is ready", "Tell me where to send it. You also see it on the next screen right away, and you can download it as a PDF.") +
+    stage.innerHTML = band("Last step", "12", "Your Offer Card is ready", "Tell me where to send it. You also see it on the next screen right away, and you can download it as a PDF.", true) +
       "<form class='card' id='leadForm' novalidate><div class='two'>" +
       "<div class='field'><label class='flabel' for='leadName'>First name</label><input id='leadName' type='text' autocomplete='given-name' maxlength='60' value='" + esc(l.name) + "'></div>" +
       "<div class='field'><label class='flabel' for='leadEmail'>Email</label><input id='leadEmail' type='email' autocomplete='email' inputmode='email' maxlength='120' value='" + esc(l.email) + "'></div></div>" +
