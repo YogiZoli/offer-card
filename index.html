@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Offer Card</title>
+<meta name="description" content="Build your offer in 12 simple questions. Get a clear Offer Card you can download, plus the GHL build spec for every part of it.">
+<meta name="color-scheme" content="light">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800&family=Geist+Mono:wght@400;700&display=swap">
+<style>
+  /* Shine v3 palette from YogiZoli/design-system, the same as the other "-brand-design" lead magnets.
+     Text #0F172A, muted #475569, page #F5F7FA, surface #FFFFFF, border #E2E8F0
+     Teal #0E7490 on #E6F4F7, Navy #1E3A8A on #E8EDFB, Emerald #047857 on #E7F6F0
+     Amber dark #92400E on #FEF3E2 for errors and warnings. No other colour. */
+  :root{
+    --text:#0F172A; --muted:#475569; --bg:#F5F7FA; --surface:#FFFFFF; --border:#E2E8F0;
+    --teal:#0E7490; --teal-t:#E6F4F7; --navy:#1E3A8A; --navy-t:#E8EDFB; --emerald:#047857; --emerald-t:#E7F6F0;
+    --amber:#B45309; --amber-t:#FEF3E2; --amber-d:#92400E;
+
+    --font-sans:"Open Sans","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+    --font-mono:"Geist Mono",ui-monospace,"SF Mono","Cascadia Mono",Menlo,monospace;
+    --text-xs:.8125rem; --text-sm:.9375rem; --text-base:1rem;
+    --radius-sm:6px; --radius-md:10px; --radius-lg:12px; --radius-xl:18px; --radius-full:9999px;
+    --shadow-xs:0 1px 2px var(--border);
+    --shadow-md:0 4px 12px var(--border);
+    --duration-fast:120ms; --duration-base:180ms;
+    --ease-standard:cubic-bezier(.4,0,.2,1); --ease-out:cubic-bezier(0,0,.2,1); --ease-inout:cubic-bezier(.4,0,.2,1);
+    color-scheme:light;
+  }
+  [data-tone="1"]{--tone:var(--teal);--tone-bg:var(--teal-t)}
+  [data-tone="2"]{--tone:var(--navy);--tone-bg:var(--navy-t)}
+  [data-tone="3"]{--tone:var(--emerald);--tone-bg:var(--emerald-t)}
+
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  body{
+    margin:0;color:var(--text);
+    background:radial-gradient(var(--border) 1px,transparent 1px) 0 0/20px 20px var(--bg);
+    font-family:var(--font-sans);font-size:var(--text-base);line-height:1.6;
+    padding-inline:16px;padding-block:18px 40px;
+    -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;
+  }
+  body::before{content:"";position:fixed;inset:0 0 auto 0;height:3px;background:var(--teal);z-index:5}
+  .wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+  header{text-align:center}
+  h1,.band h2,.card h3{color:var(--text);text-decoration:underline;text-decoration-color:var(--teal);text-decoration-thickness:3px;text-underline-offset:6px;text-decoration-skip-ink:none}
+  h1{margin:0;font-weight:800;letter-spacing:-.016em;line-height:1.3;font-size:clamp(24px,6vw,30px);text-wrap:balance;text-decoration-thickness:4px;text-underline-offset:8px}
+  .sub{margin:6px 0 0;font-size:var(--text-sm);font-weight:400;color:var(--muted)}
+
+  .prog{display:flex;flex-direction:column;gap:6px}
+  .progtop{display:flex;justify-content:space-between;gap:10px;font-family:var(--font-mono);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .bar{height:8px;border-radius:var(--radius-full);background:var(--border);overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--teal);border-radius:var(--radius-full);transition:width var(--duration-base) var(--ease-standard)}
+
+  /* every content block: tint plus a 4px left border in the matching strong colour */
+  #stage > .card,#stage > .band{position:relative;background:var(--tone-bg);color:var(--text);border:1px solid var(--border);border-left:4px solid var(--tone);border-radius:var(--radius-lg);box-shadow:var(--shadow-xs)}
+  .band{padding:20px;animation:card-in var(--duration-base) var(--ease-out)}
+  @keyframes card-in{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+  .steptag{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .steptag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--teal)}
+  .steptag .n{order:2;min-width:22px;height:22px;padding:0 6px;border-radius:var(--radius-full);display:grid;place-items:center;background:var(--teal);color:var(--surface);font-size:12px;line-height:1;font-weight:700}
+  .band h2{margin:10px 0 0;font-size:clamp(22px,5.6vw,28px);font-weight:800;letter-spacing:-.016em;line-height:1.3;text-wrap:balance}
+  .why{margin:10px 0 0;font-size:var(--text-sm);font-weight:400;line-height:1.5;color:var(--muted)}
+  .why b{color:var(--text);font-weight:700}
+
+  .card{border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);padding:20px;display:flex;flex-direction:column;gap:12px}
+  .card h3{margin:0;font-size:18px;font-weight:700;line-height:1.4}
+  .card p{margin:0}
+  .flabel{font-size:var(--text-sm);font-weight:600;margin:0;color:var(--text)}
+  .flabel small{font-weight:400;color:var(--muted)}
+  .hint{margin:0;font-size:var(--text-sm);font-weight:400;color:var(--muted);line-height:1.5}
+  .field{display:flex;flex-direction:column;gap:6px;min-width:0}
+  .two{display:grid;grid-template-columns:1fr;gap:12px}
+  @media (min-width:621px){.two{grid-template-columns:1fr 1fr}}
+  input[type=text],input[type=email],textarea{
+    width:100%;min-height:48px;border:1px solid var(--muted);background:var(--surface);color:var(--text);border-radius:var(--radius-md);
+    padding:12px 16px;font-family:inherit;font-size:16px;font-weight:400;
+    transition:border-color var(--duration-base) var(--ease-standard),box-shadow var(--duration-base) var(--ease-standard);
+  }
+  input::placeholder,textarea::placeholder{color:var(--muted)}
+  textarea{min-height:104px;resize:vertical;line-height:1.5}
+  input:focus,textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-t)}
+
+  .opts{display:grid;grid-template-columns:1fr;gap:10px}
+  @media (min-width:621px){.opts{grid-template-columns:1fr 1fr}}
+  .opt{
+    appearance:none;cursor:pointer;text-align:left;width:100%;border:1px solid var(--border);background:var(--surface);color:var(--text);
+    border-radius:var(--radius-md);padding:13px 16px;font-family:inherit;font-size:16px;font-weight:600;line-height:1.35;min-height:52px;
+    transition:background-color var(--duration-base) var(--ease-standard),border-color var(--duration-base) var(--ease-standard),transform var(--duration-fast) var(--ease-standard);
+  }
+  .opt:hover{border-color:var(--teal)}
+  .opt:active{transform:scale(.98)}
+  .opt:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+  .opt[aria-pressed="true"]{border-color:var(--teal);background:var(--teal-t);box-shadow:0 0 0 1px var(--teal)}
+
+  .btn{appearance:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:12px 24px;border-radius:var(--radius-md);border:1px solid var(--teal);
+    background:var(--teal);color:var(--surface);cursor:pointer;font-family:inherit;font-size:16px;font-weight:600;line-height:1.15;text-decoration:none;
+    transition:box-shadow var(--duration-base) var(--ease-standard),transform var(--duration-fast) var(--ease-standard)}
+  .btn:hover{box-shadow:0 0 0 3px var(--teal-t),0 0 0 4px var(--teal);transform:translateY(-1px)}
+  .btn:active{transform:scale(.98)}
+  .btn:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+  .btn.ghost{background:var(--surface);color:var(--text);border-color:var(--border)}
+  .btn.ghost:hover{border-color:var(--teal);box-shadow:none;transform:none}
+  .btn.small{font-size:var(--text-xs);font-weight:700;padding:8px 14px;min-height:36px}
+  .btn.small:hover{transform:none}
+  /* the screen's main action: pulsing halo and a light sheen */
+  #next,#start{position:relative;overflow:hidden;animation:cta-halo 2.4s var(--ease-out) infinite}
+  #next::after,#start::after{content:"";position:absolute;top:0;bottom:0;left:0;width:40%;background:linear-gradient(100deg,transparent,var(--surface),transparent);opacity:.35;animation:sheen 3.2s var(--ease-inout) infinite;pointer-events:none}
+  @keyframes cta-halo{0%{box-shadow:0 0 0 0 var(--teal)}70%{box-shadow:0 0 0 14px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  @keyframes sheen{0%,70%{transform:translateX(-120%)}100%{transform:translateX(220%)}}
+  .nav{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+  .formerr{color:var(--amber-d);background:var(--amber-t);border:1px solid var(--amber-d);border-radius:var(--radius-lg);padding:10px 14px;font-size:var(--text-sm);font-weight:600;margin:0}
+  .kbd{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+
+  .steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;counter-reset:s}
+  .steps li{counter-increment:s;display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;font-size:var(--text-sm);line-height:1.5}
+  .steps li::before{content:counter(s);width:26px;height:26px;border-radius:50%;background:var(--teal);color:var(--surface);display:grid;place-items:center;font-family:var(--font-mono);font-size:13px;font-weight:700}
+  .linkbtn{appearance:none;border:0;background:none;padding:0;color:var(--teal);font-family:var(--font-mono);font-size:.94em;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+  .linkbtn:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+
+  /* result: hero in solid Teal, then one block per component */
+  #stage[data-screen="card"] > .card.hl{background:var(--teal);border:0;color:var(--surface);padding:26px 20px;box-shadow:none}
+  .hl .kick{font-family:var(--font-mono);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+  .hl h3{color:var(--surface)!important;text-decoration-color:var(--surface)!important;font-size:clamp(23px,6vw,30px)!important;font-weight:800!important;letter-spacing:-.016em;line-height:1.3!important}
+  .hl .promise{font-size:18px;font-weight:600;line-height:1.45}
+  .hl .btn{background:var(--surface);color:var(--teal);border-color:var(--surface)}
+  .hl .btn.ghost{background:transparent;color:var(--surface);border-color:var(--surface)}
+  .hl .btn:hover{box-shadow:0 0 0 3px var(--surface)}
+  .comp{display:flex;flex-direction:column;gap:8px}
+  .comphead{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .comphead .steptag{color:var(--text)}
+  .ans{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 14px;font-size:var(--text-sm);line-height:1.55}
+  .ans .lab{display:block;font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .ans + .ans{margin-top:0}
+  .ans ul{margin:4px 0 0;padding-left:20px}
+  .ans.empty{color:var(--muted);font-style:italic}
+  .ghl{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;font-size:var(--text-sm);line-height:1.5;padding:10px 12px;border-radius:var(--radius-md);background:var(--surface);border:1px dashed var(--tone)}
+  .ghl .tag{font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:var(--tone);color:var(--surface);border-radius:var(--radius-full);padding:2px 9px;white-space:nowrap}
+  .ghl b{display:block}
+
+  footer{color:var(--muted);font-size:var(--text-xs);line-height:1.55;text-align:center}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none!important;transition-duration:.01ms!important}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Offer Card</h1>
+    <p class="sub">Build your offer in 12 simple questions</p>
+  </header>
+  <div class="prog" id="prog">
+    <div class="progtop"><span id="progL"></span><span id="progR"></span></div>
+    <div class="bar"><i id="progBar" style="width:0%"></i></div>
+  </div>
+  <noscript><div class="card"><h3>This tool needs JavaScript</h3><p class="hint">Switch JavaScript on in your browser settings and reload the page.</p></div></noscript>
+  <main id="stage" class="wrap"></main>
+  <footer>Everything runs in your browser. Your answers are saved on this device only. <span id="ver"></span></footer>
+</div>
+
+<script src="vendor/jspdf.umd.min.js"></script>
+<script src="vendor/html2canvas.min.js"></script>
+<script>
+/* ===== SETTINGS ===== */
+var WEBHOOK_URL = "";   // phase 4: the email gate. Empty = no POST.
+/* ==================== */
+
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var VERSION = "0.2.0";
+  var STORE_KEY = "offer_card_state";
+
+  /* The 12 components. Keys match the JSON schema v1 (offer.*). Each screen says why it asks. */
+  var FORMATS = [["Online course","Online course"],["Group coaching","Group coaching"],["1:1 coaching","1:1 coaching"],["Membership","Membership"],["Workshop or challenge","Workshop or challenge"],["Done with you","Done with you"]];
+  var QUESTIONS = [
+    { id:"who", tag:"Who it's for", title:"Let's start simple. Who is this offer for?",
+      why:"A clear person makes every other answer easier. If you try to help everyone, you help no one.",
+      fields:[
+        { key:"who_for", label:"Describe the one person you most want to help, in one sentence.", ph:"New coaches who want their first 10 paying clients", area:true, req:true },
+        { key:"problem", label:"What problem keeps them stuck right now?", ph:"They post every day, but nobody books a call", area:true },
+        { key:"not_for", label:"Who is this NOT for?", ph:"People looking for a quick trick with no work", hint:"Optional, but it builds trust." }
+      ],
+      ghl:["Tags and Smart Lists","Tag every buyer and lead with one clear audience tag, so you can talk to this person again later."] },
+    { id:"promise", tag:"Big Promise", title:"Now the big one. If they do everything you ask, what result will they get, and how fast?",
+      why:"This is the reason they say yes. Everything else in your offer supports this one sentence.",
+      fields:[
+        { key:"promise_result", label:"The result they get", ph:"A simple system that brings in new clients every week", area:true, req:true },
+        { key:"promise_timeframe", label:"How fast?", ph:"In 6 weeks", req:true, hint:"Only write a time you can stand behind." }
+      ],
+      ghl:["Sales page headline","Becomes the offer_promise custom value, shown in the headline of your sales page."] },
+    { id:"evenif", tag:"The \"even if\"", title:"Here's the thing. Your person already has a reason why this won't work for them. What is it?",
+      why:"We'll finish your promise with \"even if...\". When you name their doubt before they do, they trust you more.",
+      fields:[ { key:"even_if", label:"Even if...", ph:"you have a small audience and no tech skills", req:true } ],
+      ghl:["Sales page sub-headline","Sits right under the headline and answers the first objection."] },
+    { id:"name", tag:"Name", title:"What do you call it?",
+      why:"A name turns an idea into a real thing people can buy. Pick one people can remember and say out loud.",
+      fields:[
+        { key:"name", label:"Offer name", ph:"Client Engine", req:true },
+        { key:"subtitle", label:"Short subtitle", ph:"The 6-step system for your first 10 clients", hint:"Optional." }
+      ],
+      ghl:["Product name","Becomes the GHL Product and the offer_name custom value used on pages and in emails."] },
+    { id:"format", tag:"Format and Duration", title:"What shape does it take, and how long does it run?",
+      why:"Format tells people what their week will look like inside your offer.",
+      choice:{ key:"format", opts:FORMATS, other:true },
+      fields:[ { key:"duration", label:"How long does it run?", ph:"6 weeks, then lifetime access to the lessons", req:true } ],
+      ghl:["Memberships","Create a Course product in Memberships. Its access settings follow this length."] },
+    { id:"teaching", tag:"Teaching", title:"What will you teach?",
+      why:"Steps make the promise believable. People buy a clear path, not a pile of content.",
+      fields:[ { key:"teaching", label:"List the main steps or modules, in order. One per line.", ph:"Find your one person\nWrite your offer\nGet your first calls", area:true, req:true, list:true } ],
+      ghl:["Memberships categories and lessons","Each line becomes one category in your Course, with its lessons inside."] },
+    { id:"interaction", tag:"Interaction", title:"How will you work with them live?",
+      why:"Live contact is often what people value most. Be honest about what you will really do.",
+      fields:[ { key:"interaction", label:"Group calls, 1:1 sessions, Q&A, or none?", ph:"One live group Q&A call every week", area:true, req:true } ],
+      ghl:["Calendar","Set up a group event or 1:1 booking calendar so buyers can join or book their calls."] },
+    { id:"community", tag:"Community", title:"Will they have a place to meet each other?",
+      why:"People stay longer when they are not alone.",
+      fields:[ { key:"community", label:"Where, and what happens there? Write \"none\" if there is no community.", ph:"A private group to share wins and ask questions", area:true, req:true } ],
+      ghl:["Communities","Create a GHL Community group and give buyers access automatically."] },
+    { id:"support", tag:"Support", title:"When they get stuck, how do they get help?",
+      why:"Support answers the quiet question: \"What if I can't do this alone?\"",
+      fields:[ { key:"support", label:"Email, chat, office hours?", ph:"Email and chat support on weekdays", area:true, req:true } ],
+      ghl:["Conversations","Every support message lands in one inbox: email, chat and SMS together."] },
+    { id:"bonuses", tag:"Bonuses and Extras", title:"What extras do they get?",
+      why:"Good bonuses solve the next problem your person will hit.",
+      fields:[ { key:"bonuses", label:"Templates, checklists, recordings? One per line.", ph:"Ready-to-use message templates\nClient onboarding checklist", area:true, list:true, hint:"Optional. Leave it empty if there are none." } ],
+      ghl:["Memberships bonus content","Add each bonus as an extra lesson or a separate offer in Memberships."] },
+    { id:"price", tag:"Price and Reason to Act Now", title:"What does it cost, and why should they join now?",
+      why:"A real reason to act now is fair. It helps people decide instead of waiting forever.",
+      fields:[
+        { key:"price", label:"Price", ph:"$497", req:true },
+        { key:"payment_plan", label:"Payment plan", ph:"3 payments of $177", hint:"Optional." },
+        { key:"act_now_reason", label:"Why join now and not later?", ph:"The founding price closes when the cart closes", area:true, req:true }
+      ],
+      ghl:["Payments and order form","Create the Product with its Prices, put the order form on the sales page, and use the cart close date for the deadline."] },
+    { id:"risk", tag:"Risk Reversal", title:"Last question. What happens if it doesn't work for them?",
+      why:"Your guarantee is how you take the risk off their shoulders. When you carry the risk, saying yes feels safe.",
+      fields:[ { key:"risk_reversal", label:"Your guarantee", ph:"Do the work for 30 days. If you are not happy, ask for a full refund.", area:true, req:true } ],
+      ghl:["Order form and refunds","Show the guarantee next to the order form. Refunds are handled in Payments."] }
+  ];
+  var KEYS = ["name","subtitle","who_for","problem","not_for","promise_result","promise_timeframe","even_if","format","duration","teaching","interaction","community","support","bonuses","price","payment_plan","act_now_reason","risk_reversal"];
+  var SCREENS = ["intro"].concat(QUESTIONS.map(function(q){ return q.id; }), ["card"]);
+  var Q_FIRST = 1, CARD_I = SCREENS.length - 1;
+
+  var S = { i:0, a:{} };
+  var storageOK = true;
+
+  /* ---------- helpers ---------- */
+  function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]; }); }
+  function clean(s){ return String(s || "").replace(/\s+/g, " ").trim(); }
+  function lines(s){ return String(s || "").split(/\n+/).map(function(l){ return clean(l).replace(/^[-*\d.)\s]+/, ""); }).filter(Boolean); }
+
+  function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)); }catch(e){ storageOK = false; } }
+  var saveT; function saveSoon(){ clearTimeout(saveT); saveT = setTimeout(save, 400); }
+  function load(){
+    try{
+      var raw = localStorage.getItem(STORE_KEY); if(!raw) return;
+      var d = JSON.parse(raw);
+      if(d && typeof d === "object"){ S.i = +d.i || 0; S.a = d.a && typeof d.a === "object" ? d.a : {}; }
+    }catch(e){ storageOK = false; }
+  }
+  function firstMissing(){
+    for(var i = 0; i < QUESTIONS.length; i++){ if(missing(QUESTIONS[i])) return i; }
+    return -1;
+  }
+  function missing(q){
+    var a = S.a;
+    if(q.choice && !clean(a[q.choice.key])) return "Pick one, or type your own.";
+    for(var j = 0; j < q.fields.length; j++){ if(q.fields[j].req && !clean(a[q.fields[j].key])) return "Type a short answer to continue."; }
+    return "";
+  }
+
+  /* ---------- the stable JSON (schema v1) ---------- */
+  function offerData(){
+    var a = S.a, o = {};
+    KEYS.forEach(function(k){ o[k] = k === "teaching" || k === "bonuses" ? lines(a[k]) : clean(a[k]); });
+    return o;
+  }
+
+  /* ---------- screens ---------- */
+  var stage = $("stage");
+  function go(i, fromHistory){
+    S.i = Math.max(0, Math.min(SCREENS.length - 1, i)); save();
+    render();
+    if(!fromHistory){ try{ history.pushState({ i:S.i }, ""); }catch(e){} }
+    window.scrollTo(0, 0);
+    var h = $("qh"); if(h) h.focus({ preventScroll:true });
+  }
+  function paint(){
+    stage.setAttribute("data-screen", SCREENS[S.i] || "");
+    var n = 0;
+    Array.prototype.forEach.call(stage.children, function(el){
+      if(el.classList && (el.classList.contains("card") || el.classList.contains("band")) && !el.classList.contains("hl")) el.setAttribute("data-tone", String(n++ % 3 + 1));
+    });
+  }
+  function band(tag, n, h, why){
+    return "<section class='band'><span class='steptag'><span class='n'>" + n + "</span> " + esc(tag) + "</span><h2 id='qh' tabindex='-1'>" + esc(h) + "</h2>" + (why ? "<p class='why'><b>Why I ask:</b> " + esc(why) + "</p>" : "") + "</section>";
+  }
+  function navHtml(nextLabel){
+    return "<div class='nav'>" + (S.i > 0 ? "<button type='button' class='btn ghost' id='back'>Back</button>" : "<span></span>") +
+      (nextLabel ? "<button type='button' class='btn' id='next'>" + esc(nextLabel) + "</button>" : "") + "</div>";
+  }
+  function bindNav(onNext){
+    var b = $("back"), n = $("next");
+    if(b) b.addEventListener("click", function(){ go(S.i - 1); });
+    if(n) n.addEventListener("click", function(){ if(onNext && onNext() === false) return; go(S.i + 1); });
+  }
+  function progress(){
+    var L, R, pct;
+    if(S.i === 0){ L = "Offer Card"; R = "12 questions"; pct = 0; }
+    else if(S.i < CARD_I){ L = QUESTIONS[S.i - Q_FIRST].tag; R = "Question " + S.i + " of " + QUESTIONS.length; pct = (S.i - 1) / QUESTIONS.length * 100; }
+    else { L = "Your Offer Card"; R = "Done"; pct = 100; }
+    $("progL").textContent = L; $("progR").textContent = R; $("progBar").style.width = Math.max(3, pct) + "%";
+  }
+
+  function render(){
+    try{ draw(); paint(); }
+    catch(e){
+      stage.innerHTML = "<div class='card'><h3>This screen did not load</h3><p class='hint'>" + (storageOK ? "Your answers are still saved in this browser. " : "") + "Reload the page. If it happens again, go back to the first question.</p><div class='nav'><button type='button' class='btn' id='crReload'>Reload the page</button><button type='button' class='btn ghost' id='crFirst'>First question</button></div></div>";
+      $("crReload").addEventListener("click", function(){ location.reload(); });
+      $("crFirst").addEventListener("click", function(){ go(Q_FIRST); });
+    }
+  }
+  function draw(){
+    /* the card needs every required answer: if one is missing, go to it instead of showing a broken card */
+    if(S.i === CARD_I){ var miss = firstMissing(); if(miss >= 0) S.i = Q_FIRST + miss; }
+    progress();
+    var id = SCREENS[S.i];
+    if(id === "intro") return intro();
+    if(id === "card") return card();
+    return question(QUESTIONS[S.i - Q_FIRST]);
+  }
+
+  function intro(){
+    var started = KEYS.some(function(k){ return clean(S.a[k]); });
+    stage.innerHTML = band("Before we start", "12", "Let's build your offer, one question at a time.", "") +
+      "<div class='card'><p>You will answer 12 short questions about your offer: who it is for, what they get, the price and your guarantee.</p>" +
+      "<ol class='steps'><li><span>One question per screen. Each one tells you why it matters.</span></li><li><span>Short answers are fine. You can go back and change anything.</span></li><li><span>At the end you get your Offer Card, plus what to build for each part in GHL.</span></li></ol>" +
+      "<div class='nav'><span></span><button type='button' class='btn' id='start'>" + (started ? "Continue where I left off" : "Start") + "</button></div></div>";
+    $("start").addEventListener("click", function(){
+      if(!started) return go(Q_FIRST);
+      var miss = firstMissing(); go(miss < 0 ? CARD_I : Q_FIRST + miss);
+    });
+  }
+
+  function question(q){
+    var a = S.a, n = S.i - Q_FIRST + 1, body = "";
+    if(q.choice){
+      var cur = a[q.choice.key] || "", known = q.choice.opts.some(function(o){ return o[0] === cur; });
+      body += "<div class='opts'>" + q.choice.opts.map(function(o){ return "<button type='button' class='opt' data-v='" + esc(o[0]) + "' aria-pressed='" + (cur === o[0]) + "'>" + esc(o[1]) + "</button>"; }).join("") +
+        "<button type='button' class='opt' data-v='' id='otherOpt' aria-pressed='" + (!!cur && !known) + "'>Something else</button></div>" +
+        "<div class='field' id='otherWrap'" + (cur && !known ? "" : " hidden") + "><label class='flabel' for='f_other'>Describe the format</label><input id='f_other' type='text' maxlength='120' value='" + esc(known ? "" : cur) + "' autocomplete='off'></div>";
+    }
+    body += q.fields.map(function(f){
+      var label = esc(f.label) + (f.req ? "" : " <small>(optional)</small>");
+      var ctl = f.area ? "<textarea id='f_" + f.key + "' maxlength='800' placeholder='" + esc(f.ph) + "'>" + esc(a[f.key] || "") + "</textarea>"
+        : "<input id='f_" + f.key + "' type='text' maxlength='200' placeholder='" + esc(f.ph) + "' value='" + esc(a[f.key] || "") + "' autocomplete='off'>";
+      return "<div class='field'><label class='flabel' for='f_" + f.key + "'>" + label + "</label>" + ctl + (f.hint ? "<p class='hint'>" + esc(f.hint) + "</p>" : "") + "</div>";
+    }).join("");
+    var last = S.i === CARD_I - 1;
+    stage.innerHTML = band(q.tag, n, q.title, q.why) + "<div class='card'>" + body + "<p class='formerr' id='err' role='alert' hidden></p>" + navHtml(last ? "Show my Offer Card" : "Next") + "</div>";
+
+    function collect(){
+      q.fields.forEach(function(f){ var el = $("f_" + f.key); if(el) a[f.key] = el.value; });
+      var o = $("f_other"); if(o && !$("otherWrap").hidden) a[q.choice.key] = o.value;
+      saveSoon();
+    }
+    function valid(){
+      var err = missing(q);
+      $("err").textContent = err; $("err").hidden = !err;
+      return !err;
+    }
+    Array.prototype.forEach.call(stage.querySelectorAll("input,textarea"), function(el){
+      el.addEventListener("input", collect);
+      if(el.tagName === "INPUT") el.addEventListener("keydown", function(e){ if(e.key === "Enter"){ e.preventDefault(); collect(); if(valid()) go(S.i + 1); } });
+    });
+    Array.prototype.forEach.call(stage.querySelectorAll(".opt"), function(b){
+      b.addEventListener("click", function(){
+        Array.prototype.forEach.call(stage.querySelectorAll(".opt"), function(x){ x.setAttribute("aria-pressed", String(x === b)); });
+        var other = b.id === "otherOpt";
+        $("otherWrap").hidden = !other;
+        a[q.choice.key] = other ? $("f_other").value : b.dataset.v;
+        save();
+        (other ? $("f_other") : $("f_" + q.fields[0].key)).focus();
+      });
+    });
+    bindNav(function(){ collect(); return valid(); });
+    var first = stage.querySelector("input[type=text],textarea");
+    if(first && !q.choice && window.matchMedia && window.matchMedia("(min-width:700px)").matches) first.focus();
+  }
+
+  /* ---------- result ---------- */
+  function ansHtml(label, val, isList){
+    if(isList){
+      if(!val.length) return "<div class='ans empty'><span class='lab'>" + esc(label) + "</span>None</div>";
+      return "<div class='ans'><span class='lab'>" + esc(label) + "</span><ul>" + val.map(function(x){ return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></div>";
+    }
+    if(!val) return "";
+    return "<div class='ans'><span class='lab'>" + esc(label) + "</span>" + esc(val) + "</div>";
+  }
+  function card(){
+    var o = offerData();
+    var promise = o.promise_result + (o.promise_timeframe ? ", " + o.promise_timeframe.replace(/^./, function(c){ return c.toLowerCase(); }) : "") + ", even if " + o.even_if.replace(/^even if\s*/i, "");
+    var html = "<div class='card hl'><span class='kick'>Your Offer Card</span><h3 id='qh' tabindex='-1'>" + esc(o.name) + "</h3>" +
+      (o.subtitle ? "<p>" + esc(o.subtitle) + "</p>" : "") +
+      "<p class='promise'>" + esc(promise.replace(/[.\s]+$/, "")) + ".</p>" +
+      "<p>" + esc(o.format) + ", " + esc(o.duration) + ". " + esc(o.price) + (o.payment_plan ? " or " + esc(o.payment_plan) : "") + ".</p>" +
+      "<div class='nav'><button type='button' class='btn ghost small' id='editAll'>Change an answer</button></div></div>";
+    QUESTIONS.forEach(function(q, i){
+      var parts = q.fields.map(function(f){ return ansHtml(f.label.replace(/[?.].*$/, function(m){ return m.charAt(0) === "?" ? "?" : ""; }), o[f.key], f.list); });
+      if(q.choice) parts.unshift(ansHtml("Format", o.format));
+      html += "<section class='card comp'><div class='comphead'><span class='steptag'><span class='n'>" + (i + 1) + "</span> " + esc(q.tag) + "</span>" +
+        "<button type='button' class='linkbtn' data-edit='" + (Q_FIRST + i) + "'>Edit</button></div>" + parts.join("") +
+        "<div class='ghl'><span class='tag'>In GHL</span><span><b>" + esc(q.ghl[0]) + "</b>" + esc(q.ghl[1]) + "</span></div></section>";
+    });
+    html += "<div class='card'><h3>What comes next</h3><p class='hint'>Phase 3 adds the PDF download and the copy block for the Launch Engine here.</p>" +
+      "<div class='nav'><button type='button' class='btn ghost' id='back'>Back</button><button type='button' class='btn ghost small' id='restart'>Start a new Offer Card</button></div></div>";
+    stage.innerHTML = html;
+    Array.prototype.forEach.call(stage.querySelectorAll("[data-edit]"), function(b){ b.addEventListener("click", function(){ go(+b.dataset.edit); }); });
+    $("editAll").addEventListener("click", function(){ go(Q_FIRST); });
+    $("back").addEventListener("click", function(){ go(S.i - 1); });
+    $("restart").addEventListener("click", function(){
+      if(!confirm("Start a new Offer Card? Your current answers in this browser will be replaced.")) return;
+      S.a = {}; go(0);
+    });
+  }
+
+  /* ---------- start ---------- */
+  $("ver").textContent = "v" + VERSION;
+  load();
+  window.addEventListener("popstate", function(e){ if(e.state && typeof e.state.i === "number") go(e.state.i, true); });
+  try{ history.replaceState({ i:S.i }, ""); }catch(e){}
+  render();
+  window.OfferCard = { data:offerData };
+})();
+</script>
+</body>
+</html>
